@@ -15,13 +15,9 @@ export const habitService = {
   getAllHabitLogs(): Record<string, HabitLog> {
     const raw = storageService.getData<Record<string, HabitLog> | null>(HABIT_LOGS_KEY, null);
     if (!raw) {
-      if (!isAppInitialized()) {
-        const sample = generateSampleHabitLogs();
-        storageService.saveData(HABIT_LOGS_KEY, sample);
-        markAppInitialized();
-        return sample;
-      }
-      return {};
+      const emptyMap: Record<string, HabitLog> = {};
+      storageService.saveData(HABIT_LOGS_KEY, emptyMap);
+      return emptyMap;
     }
     return raw;
   },

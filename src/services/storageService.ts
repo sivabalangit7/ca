@@ -1,9 +1,56 @@
 const STORAGE_PREFIX = 'nutritrack_india_';
-const PIN_STORAGE_KEY = `${STORAGE_PREFIX}security_pin_hash`;
-const PIN_ENABLED_KEY = `${STORAGE_PREFIX}security_pin_enabled`;
+const PIN_STORAGE_KEY = `security_pin_hash`;
+const PIN_ENABLED_KEY = `security_pin_enabled`;
+
+// Keys that are global (device-wide settings, shared across user accounts)
+const GLOBAL_KEYS = new Set([
+  'color_theme',
+  'nutritrack_custom_api_url',
+  'nutritrack_custom_api_key',
+  'nutritrack_auth_user',
+  'nutritrack_local_accounts',
+]);
+
+// Current active user ID for storage partitioning
+let activeUserId: string | null = null;
+
+// Initialize activeUserId from cached auth user if available
+if (typeof window !== 'undefined') {
+  try {
+    const rawAuth = localStorage.getItem('nutritrack_auth_user');
+    if (rawAuth) {
+      const parsed = JSON.parse(rawAuth);
+      if (parsed && (parsed.email || parsed.uid)) {
+        activeUserId = (parsed.email || parsed.uid).trim().toLowerCase();
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function setStorageUserId(userId: string | null): void {
+  activeUserId = userId ? userId.trim().toLowerCase() : null;
+}
+
+export function getStorageUserId(): string | null {
+  return activeUserId;
+}
 
 export function getStorageKey(key: string): string {
-  return `${STORAGE_PREFIX}${key}`;
+  // If key is a device-wide global key, keep global prefix
+  if (GLOBAL_KEYS.has(key)) {
+    return `${STORAGE_PREFIX}${key}`;
+  }
+
+  // If a user is logged in, partition all user data by user's email/id
+  if (activeUserId) {
+    const safeUser = activeUserId.replace(/[^a-z0-9_.-]/g, '_');
+    return `nutritrack_u_${safeUser}_${key}`;
+  }
+
+  // Fallback for guest or pre-login state
+  return `nutritrack_guest_${key}`;
 }
 
 // Simple deterministic hash for integrity verification
@@ -28,6 +75,14 @@ function hashPin(pin: string): string {
 }
 
 export const storageService = {
+  setUserId(userId: string | null): void {
+    setStorageUserId(userId);
+  },
+
+  getUserId(): string | null {
+    return getStorageUserId();
+  },
+
   hasKey(key: string): boolean {
     try {
       return localStorage.getItem(getStorageKey(key)) !== null;
@@ -98,9 +153,17 @@ export const storageService = {
     try {
       const preservedFullKeys = new Set(preserveKeys.map(getStorageKey));
       const keysToRemove: string[] = [];
+      const userPrefix = activeUserId
+        ? `nutritrack_u_${activeUserId.replace(/[^a-z0-9_.-]/g, '_')}_`
+        : 'nutritrack_guest_';
+
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith(STORAGE_PREFIX) && !preservedFullKeys.has(k)) {
+        if (!k) continue;
+        if (preservedFullKeys.has(k)) continue;
+
+        // Only remove current user partition or old legacy unpartitioned keys
+        if (k.startsWith(userPrefix) || (k.startsWith(STORAGE_PREFIX) && !k.includes('nutritrack_u_'))) {
           keysToRemove.push(k);
         }
       }

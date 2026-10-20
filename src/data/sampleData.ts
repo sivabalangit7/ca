@@ -7,6 +7,8 @@ import { getOffsetDateKey } from '../utils/dateUtils';
 import { calculateFoodNutrition } from '../utils/nutritionCalc';
 import { INITIAL_INDIAN_FOODS } from './indianFoods';
 
+import { storageService } from '../services/storageService';
+
 // Helper to look up sample items
 function getFood(id: string): FoodItem {
   const f = INITIAL_INDIAN_FOODS.find((item) => item.id === id);
@@ -33,7 +35,7 @@ export const SAMPLE_PROFILE: UserProfile = {
   isCustomTargets: false,
 };
 
-export function generateSampleDailyLogs(): Record<string, DailyLog> {
+export function generateSampleDailyLogs(includeToday: boolean = false): Record<string, DailyLog> {
   const logs: Record<string, DailyLog> = {};
 
   // Sample items
@@ -49,8 +51,10 @@ export function generateSampleDailyLogs(): Record<string, DailyLog> {
   const roti = getFood('ni-roti');
   const chickenCurry = getFood('pr-chicken-curry');
 
-  // Generate for past 30 days so charts have full data
-  for (let i = 0; i <= 30; i++) {
+  // Generate for past 30 days so charts have full data.
+  // Note: if includeToday is false, today (i=0) remains empty so the user starts fresh!
+  const startDay = includeToday ? 0 : 1;
+  for (let i = startDay; i <= 30; i++) {
     const dateKey = getOffsetDateKey(-i);
     const _daySeed = i % 5;
 
@@ -346,27 +350,28 @@ export function markAppInitialized(): void {
 
 export function populateSampleData(force = false): void {
   try {
-    const PROFILE_KEY = 'nutritrack_india_user_profile';
-    const DAILY_LOGS_KEY = 'nutritrack_india_daily_logs_map';
-    const HABIT_LOGS_KEY = 'nutritrack_india_habit_logs_map';
-    const MEAL_PLAN_KEY = 'nutritrack_india_weekly_meal_plan';
+    const PROFILE_KEY = 'user_profile';
+    const DAILY_LOGS_KEY = 'daily_logs_map';
+    const HABIT_LOGS_KEY = 'habit_logs_map';
+    const MEAL_PLAN_KEY = 'weekly_meal_plan';
 
     // If already initialized and not forced, do not overwrite user data or cleared state
     if (!force && isAppInitialized()) {
       return;
     }
 
-    if (force || !localStorage.getItem(PROFILE_KEY)) {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(SAMPLE_PROFILE));
+    if (force || !storageService.hasKey(PROFILE_KEY)) {
+      storageService.saveData(PROFILE_KEY, SAMPLE_PROFILE);
     }
-    if (force || !localStorage.getItem(DAILY_LOGS_KEY)) {
-      localStorage.setItem(DAILY_LOGS_KEY, JSON.stringify(generateSampleDailyLogs()));
+    if (force || !storageService.hasKey(DAILY_LOGS_KEY)) {
+      // Pass false so today starts empty and ready for real meals!
+      storageService.saveData(DAILY_LOGS_KEY, generateSampleDailyLogs(false));
     }
-    if (force || !localStorage.getItem(HABIT_LOGS_KEY)) {
-      localStorage.setItem(HABIT_LOGS_KEY, JSON.stringify(generateSampleHabitLogs()));
+    if (force || !storageService.hasKey(HABIT_LOGS_KEY)) {
+      storageService.saveData(HABIT_LOGS_KEY, generateSampleHabitLogs());
     }
-    if (force || !localStorage.getItem(MEAL_PLAN_KEY)) {
-      localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(generateSampleWeeklyMealPlan()));
+    if (force || !storageService.hasKey(MEAL_PLAN_KEY)) {
+      storageService.saveData(MEAL_PLAN_KEY, generateSampleWeeklyMealPlan());
     }
 
     markAppInitialized();

@@ -8,12 +8,14 @@ import {
   Calendar,
   User,
   Plus,
+  LogOut,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDisplayDate, getOffsetDateKey, getTodayKey } from '../../utils/dateUtils';
 import { apiService, DatabaseStatus } from '../../services/apiService';
 import { NutriTrackLogo } from './NutriTrackLogo';
 import { UserProfile } from '../../types/profile';
+import { AuthUser } from '../../services/authService';
 
 interface NavbarProps {
   selectedDate: string;
@@ -23,6 +25,8 @@ interface NavbarProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   profile?: UserProfile;
+  user?: AuthUser | null;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,6 +37,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme,
   toggleTheme,
   profile,
+  user,
+  onLogout,
 }) => {
   const today = getTodayKey();
   const isToday = selectedDate === today;
@@ -153,17 +159,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Link
               to="/profile"
               className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#172033] hover:bg-slate-200 dark:hover:bg-[#263247] border border-slate-200/80 dark:border-[#263247] text-slate-700 dark:text-slate-200 app-btn-press"
-              title="Profile & Settings"
+              title={user ? `Account: ${user.displayName || user.email}` : (profile?.name || 'Profile & Settings')}
               aria-label="Profile and Settings"
             >
-              {profile?.name ? (
+              {(user?.displayName || profile?.name) ? (
                 <span className="text-xs font-extrabold text-[#10B981]">
-                  {profile.name.charAt(0).toUpperCase()}
+                  {(user?.displayName || profile?.name || 'U').charAt(0).toUpperCase()}
                 </span>
               ) : (
                 <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               )}
             </Link>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-2 rounded-xl text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors app-btn-press"
+                title={user ? `Sign Out (${user.email})` : 'Sign Out'}
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Desktop Add Food Button */}
             <button

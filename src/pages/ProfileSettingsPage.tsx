@@ -14,6 +14,7 @@ import {
   FileDown,
   FileUp,
   Key,
+  LogOut,
 } from 'lucide-react';
 import { UserProfile, GenderType, GoalType } from '../types/profile';
 import { DietaryType } from '../types/food';
@@ -30,12 +31,16 @@ import {
 import { storageService } from '../services/storageService';
 import { Modal } from '../components/common/Modal';
 import { DisclaimerNotice } from '../components/common/DisclaimerNotice';
+import { AuthUser } from '../services/authService';
 
 interface ProfileSettingsPageProps {
   profile: UserProfile;
   onUpdateProfile: (updated: UserProfile) => void;
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  user?: AuthUser | null;
+  onLogout?: () => void;
+  onClearTodayLog?: () => void;
 }
 
 export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
@@ -43,8 +48,15 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
   onUpdateProfile,
   isDarkMode,
   onToggleTheme,
+  user,
+  onLogout,
+  onClearTodayLog,
 }) => {
   const [formData, setFormData] = useState<UserProfile>(profile);
+
+  useEffect(() => {
+    setFormData(profile);
+  }, [profile]);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showSampleModal, setShowSampleModal] = useState(false);
@@ -266,6 +278,58 @@ export const ProfileSettingsPage: React.FC<ProfileSettingsPageProps> = ({
           {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
           <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
+      </div>
+
+      {/* Active Account Card */}
+      <div className="glass-card p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black flex items-center justify-center text-lg shadow-lg shadow-emerald-500/20 flex-shrink-0">
+            {(user?.displayName || formData.name || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                {user?.displayName || formData.name || 'User'}
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                Active Account
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              {user?.email || 'Logged in locally'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {onClearTodayLog && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Clear today's meals and start with a fresh daily log?")) {
+                  onClearTodayLog();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors app-btn-press"
+              title="Clear today's logged meals and start fresh today"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+              <span>Reset Today's Log</span>
+            </button>
+          )}
+
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200/60 dark:border-rose-900/40 text-xs font-bold transition-all app-btn-press"
+              title="Sign out of this account"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {saveSuccess && (

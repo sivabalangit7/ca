@@ -35,8 +35,10 @@ import { HabitTrackerPage } from './pages/HabitTrackerPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 
+import { AuthUser } from './services/authService';
+
 export const App: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
 
   // Show login page if not authenticated
   if (authLoading) {
@@ -58,27 +60,55 @@ export const App: React.FC = () => {
     return <LoginPage />;
   }
 
-  // User is authenticated — set user_id for API calls
-  apiService.setUserId(user.uid);
-
-  return <AuthenticatedApp />;
+  // Key AuthenticatedApp by user ID so all state and hooks cleanly reset when switching accounts!
+  return <AuthenticatedApp key={user.uid || user.email} user={user} onLogout={logout} />;
 };
+
+interface AuthenticatedAppProps {
+  user: AuthUser;
+  onLogout: () => Promise<void>;
+}
 
 /**
  * The main application, rendered only when user is authenticated.
  */
-const AuthenticatedApp: React.FC = () => {
+const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ user, onLogout }) => {
   // Passcode Privacy Lock State
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => !storageService.isPinLockEnabled());
-
-  // Preload initial sample data on first run
-  useEffect(() => {
-    populateSampleData(false);
-  }, []);
 
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const [selectedDate, setSelectedDate] = useState<string>(getTodayKey());
+
+  // Active day-rollover synchronization: checks every 15s and on app focus/resume
+  useEffect(() => {
+    const checkDateRoll = () => {
+      const today = getTodayKey();
+      setSelectedDate((current) => {
+        // If calendar date has advanced, roll to new today automatically
+        if (current < today) {
+          return today;
+        }
+        return current;
+      });
+    };
+
+    const interval = setInterval(checkDateRoll, 15000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkDateRoll();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', checkDateRoll);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', checkDateRoll);
+    };
+  }, []);
+
   const { profile, updateProfile } = useProfile();
   const {
     log,
@@ -132,7 +162,13 @@ const AuthenticatedApp: React.FC = () => {
     <BrowserRouter>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors duration-200">
         {/* Desktop Sidebar */}
-        <Sidebar theme={theme} toggleTheme={toggleTheme} profile={profile} />
+        <Sidebar
+          theme={theme}
+          toggleTheme={toggleTheme}
+          profile={profile}
+          user={user}
+          onLogout={onLogout}
+        />
 
         {/* Main Column */}
         <div className="flex-1 flex flex-col min-w-0 pb-28 lg:pb-8">
@@ -144,6 +180,8 @@ const AuthenticatedApp: React.FC = () => {
             theme={theme}
             toggleTheme={toggleTheme}
             profile={profile}
+            user={user}
+            onLogout={onLogout}
           />
 
           <main className="flex-1 px-3 sm:px-6 lg:px-8 py-3.5 sm:py-6">
@@ -167,6 +205,7 @@ const AuthenticatedApp: React.FC = () => {
                     onUpdateWaterTarget={updateWaterTarget}
                     onUpdateActivity={updateActivity}
                     onToggleHabit={toggleHabit}
+                    onClearDay={clearDayLog}
                   />
                 }
               />
@@ -250,6 +289,9 @@ const AuthenticatedApp: React.FC = () => {
                     onUpdateProfile={updateProfile}
                     isDarkMode={isDark}
                     onToggleTheme={toggleTheme}
+                    user={user}
+                    onLogout={onLogout}
+                    onClearTodayLog={() => clearDayLog()}
                   />
                 }
               />
@@ -264,7 +306,12 @@ const AuthenticatedApp: React.FC = () => {
         <BottomNav onOpenMoreMenu={() => setMobileMenuOpen(true)} />
 
         {/* Mobile More Menu */}
-        <MobileMoreMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <MobileMoreMenu
+          isOpen={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          user={user}
+          onLogout={onLogout}
+        />
 
         {/* Global Food Search Modal */}
         <FoodSearchModal

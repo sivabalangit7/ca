@@ -10,6 +10,9 @@ import {
 } from '../services/authService';
 import { apiService } from '../services/apiService';
 
+import { storageService } from '../services/storageService';
+import { profileService } from '../services/profileService';
+
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
@@ -36,7 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(() => {
     const cached = getCachedAuthUser();
     if (cached) {
-      apiService.setUserId(cached.email || cached.uid);
+      const uid = cached.email || cached.uid;
+      storageService.setUserId(uid);
+      apiService.setUserId(uid);
     }
     return cached;
   });
@@ -47,7 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cached = getCachedAuthUser();
     if (cached) {
       setUser(cached);
-      apiService.setUserId(cached.email || cached.uid);
+      const uid = cached.email || cached.uid;
+      storageService.setUserId(uid);
+      apiService.setUserId(uid);
+      profileService.initializeUserProfile(cached);
     }
     setLoading(false);
   }, []);
@@ -57,9 +65,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       setLoading(true);
       const authUser = await loginWithCredentials(email, password);
+      storageService.setUserId(authUser.email);
+      apiService.setUserId(authUser.email);
+      profileService.initializeUserProfile(authUser);
       setUser(authUser);
       cacheAuthUser(authUser);
-      apiService.setUserId(authUser.email);
     } catch (err: any) {
       const msg = err?.message || 'Login failed. Please check your credentials.';
       setError(msg);
@@ -74,9 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       setLoading(true);
       const authUser = await registerWithCredentials(email, password, name);
+      storageService.setUserId(authUser.email);
+      apiService.setUserId(authUser.email);
+      profileService.initializeUserProfile(authUser);
       setUser(authUser);
       cacheAuthUser(authUser);
-      apiService.setUserId(authUser.email);
     } catch (err: any) {
       const msg = err?.message || 'Registration failed. Please try again.';
       setError(msg);
@@ -90,9 +102,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       await signOutUser();
+      storageService.setUserId(null);
+      apiService.setUserId(null);
       setUser(null);
       cacheAuthUser(null);
-      apiService.setUserId(null);
     } catch (err) {
       console.error('Sign-out error:', err);
     } finally {

@@ -94,25 +94,28 @@ def get_user_profile(request: Request):
         cursor.execute("SELECT * FROM user_profile WHERE id = ? OR user_id = ? ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END LIMIT 1", (user_id, user_id, user_id))
         row = cursor.fetchone()
 
-        if not row:
-            # Fallback to current default if exists
-            cursor.execute("SELECT * FROM user_profile WHERE id = 'current' LIMIT 1")
-            row = cursor.fetchone()
-
-        if not row:
-            # Create default profile for this user
+        if not row and user_id and user_id != "default":
+            # Lookup user's registered name from users table
+            cursor.execute("SELECT name, email FROM users WHERE id = ? OR LOWER(email) = ?", (user_id, user_id.lower()))
+            u_row = cursor.fetchone()
+            name = u_row["name"] if u_row else user_id.split("@")[0].replace(".", " ").capitalize()
             now_iso = datetime.datetime.now().isoformat()
             cursor.execute("""
-            INSERT OR IGNORE INTO user_profile (
+            INSERT OR REPLACE INTO user_profile (
                 id, user_id, name, age, gender, height_cm, weight_kg, activity_level, goal,
                 dietary_preference, target_calories, target_protein_g, target_carbs_g,
                 target_fat_g, target_fiber_g, target_water_ml, target_steps, is_custom_targets, updated_at
             ) VALUES (
-                ?, ?, 'Fitness Enthusiast', 28, 'male', 174.0, 74.5, 'moderately_active', 'lose_05',
-                'veg', 1950, 110.0, 220.0, 52.0, 35.0, 3000, 10000, 0, ?
+                ?, ?, ?, 26, 'male', 172.0, 68.0, 'moderately_active', 'maintain_health',
+                'veg', 2000, 100.0, 225.0, 55.0, 30.0, 2500, 8500, 0, ?
             )
-            """, (user_id, user_id, now_iso))
-            cursor.execute("SELECT * FROM user_profile WHERE id = ? LIMIT 1", (user_id,))
+            """, (user_id, user_id, name, now_iso))
+            cursor.execute("SELECT * FROM user_profile WHERE id = ? OR user_id = ? LIMIT 1", (user_id, user_id))
+            row = cursor.fetchone()
+
+        if not row:
+            # Fallback to current default only for unauthenticated guest
+            cursor.execute("SELECT * FROM user_profile WHERE id = 'current' LIMIT 1")
             row = cursor.fetchone()
 
         if not row:

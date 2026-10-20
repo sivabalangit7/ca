@@ -14,17 +14,27 @@ import {
   Moon,
   Camera,
   Scale,
+  LogOut,
 } from 'lucide-react';
 import { NutriTrackLogo } from './NutriTrackLogo';
 import { UserProfile } from '../../types/profile';
+import { AuthUser } from '../../services/authService';
 
 interface SidebarProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   profile: UserProfile;
+  user?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ theme, toggleTheme, profile }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  theme,
+  toggleTheme,
+  profile,
+  user,
+  onLogout,
+}) => {
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/tracker', label: 'Food Tracker', icon: Utensils },
@@ -67,34 +77,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ theme, toggleTheme, profile })
         })}
       </nav>
 
-      {/* Bottom Profile & Theme Toggle */}
+      {/* Bottom Profile, Theme Toggle & Sign Out */}
       <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center text-xs flex-shrink-0">
-              {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+        <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                {(user?.displayName || profile.name || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  {user?.displayName || profile.name || 'User'}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate" title={user?.email || ''}>
+                  {user?.email || (profile.goal || 'maintain_health').replace(/_/g, ' ')}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                {profile.name || 'User'}
-              </p>
-              <p className="text-[10px] text-slate-400 capitalize truncate">
-                {profile.goal === 'lose_weight_gradual'
-                  ? 'Weight Loss (Gradual)'
-                  : profile.goal === 'lose_weight_moderate'
-                  ? 'Weight Loss (Moderate)'
-                  : (profile.goal || 'maintain_health').replace(/_/g, ' ')}
-              </p>
-            </div>
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+            </button>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
-          </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/40 transition-colors app-btn-press"
+              title="Sign out of current account"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
       </div>
     </aside>

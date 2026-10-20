@@ -9,16 +9,20 @@ import {
   Sparkles,
   Scale,
   CalendarDays,
+  LogOut,
 } from 'lucide-react';
 
 import { NutriTrackIconMark } from './NutriTrackLogo';
+import { AuthUser } from '../../services/authService';
 
 interface MobileMoreMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-export const MobileMoreMenu: React.FC<MobileMoreMenuProps> = ({ isOpen, onClose }) => {
+export const MobileMoreMenu: React.FC<MobileMoreMenuProps> = ({ isOpen, onClose, user, onLogout }) => {
   if (!isOpen) return null;
 
   const moreItems = [
@@ -115,6 +119,36 @@ export const MobileMoreMenu: React.FC<MobileMoreMenuProps> = ({ isOpen, onClose 
             );
           })}
         </div>
+
+        {/* User Account & Logout */}
+        {user && onLogout && (
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-500 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                {(user.displayName || user.email).charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  {user.displayName || 'User'}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                onClose();
+                onLogout();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-200/60 dark:border-rose-900/40 app-btn-press"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

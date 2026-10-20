@@ -30,13 +30,9 @@ export const logService = {
   getAllLogs(): Record<string, DailyLog> {
     const raw = storageService.getData<Record<string, DailyLog> | null>(DAILY_LOGS_KEY, null);
     if (!raw) {
-      if (!isAppInitialized()) {
-        const sample = generateSampleDailyLogs();
-        storageService.saveData(DAILY_LOGS_KEY, sample);
-        markAppInitialized();
-        return sample;
-      }
-      return {};
+      const emptyMap: Record<string, DailyLog> = {};
+      storageService.saveData(DAILY_LOGS_KEY, emptyMap);
+      return emptyMap;
     }
     return raw;
   },

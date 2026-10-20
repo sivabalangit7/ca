@@ -5,6 +5,7 @@ import {
   BookOpen,
   Scale,
   ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DailyCalorieHero } from '../components/dashboard/DailyCalorieHero';
@@ -34,6 +35,7 @@ interface DashboardPageProps {
   onUpdateWaterTarget: (targetMl: number) => void;
   onUpdateActivity: (update: Partial<DailyLog['activity']>) => void;
   onToggleHabit: (id: string) => void;
+  onClearDay?: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -51,6 +53,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onUpdateWaterTarget,
   onUpdateActivity,
   onToggleHabit,
+  onClearDay,
 }) => {
   const navigate = useNavigate();
 
@@ -152,13 +155,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </p>
           </div>
 
-          <Link
-            to="/tracker"
-            className="text-xs font-bold text-[#10B981] hover:text-emerald-400 flex items-center gap-1 app-btn-press"
-          >
-            <span>Full Diary</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-2">
+            {log.foods.length > 0 && onClearDay && (
+              <button
+                onClick={() => {
+                  if (window.confirm("Clear all foods logged for today and start fresh?")) {
+                    onClearDay();
+                  }
+                }}
+                className="text-xs font-semibold text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors app-btn-press"
+                title="Clear today's meals and start fresh"
+              >
+                <RotateCcw className="w-3 h-3 text-amber-500" />
+                <span>Reset Today</span>
+              </button>
+            )}
+
+            <Link
+              to="/tracker"
+              className="text-xs font-bold text-[#10B981] hover:text-emerald-400 flex items-center gap-1 app-btn-press"
+            >
+              <span>Full Diary</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* 4 Professional Meal Cards: Breakfast, Lunch, Snacks, Dinner */}
