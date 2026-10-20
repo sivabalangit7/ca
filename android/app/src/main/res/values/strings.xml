@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NutriTrack</string>
+    <string name="title_activity_main">NutriTrack</string>
+    <string name="package_name">com.calorietracker.app</string>
+    <string name="custom_url_scheme">com.calorietracker.app</string>
+</resources>

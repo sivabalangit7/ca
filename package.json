@@ -1,0 +1,40 @@
+{
+  "name": "calorie-tracker",
+  "private": true,
+  "version": "1.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "backend": "python3 backend/run.py",
+    "server": "python3 backend/run.py",
+    "build": "tsc -b && vite build",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "build:apk": "npm run build && npx cap sync android && cd android && JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/home/siva/Android/Sdk ./gradlew assembleDebug && cp app/build/outputs/apk/debug/app-debug.apk ../calorie-tracker.apk && cp app/build/outputs/apk/debug/app-debug.apk ../calorie-tracker-v1.4.0.apk",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
+    "firebase": "^13.0.0",
+    "lucide-react": "^1.39.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.2",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "autoprefixer": "^10.5.4",
+    "oxlint": "^1.79.0",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}
